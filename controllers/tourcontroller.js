@@ -3,9 +3,15 @@ const mongoose = require("mongoose");
 const slugify = require("slugify");
 exports.getAllTours = async (req, res) => {
   try {
-    const tours = await Tour.find({});
-    // console.log();
+    const queryObj = { ...req.query };
+    const delObj = ["page", "sort", "limit"];
 
+    delObj.forEach((el) => {
+      delete queryObj[el];
+    });
+
+    const query = Tour.find(queryObj);
+    const tours = await query;
     res.status(200).json({
       status: "success",
       result: tours.length,
