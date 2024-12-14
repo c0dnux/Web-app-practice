@@ -1,6 +1,8 @@
 const Tour = require("./../models/tourModels");
-const mongoose = require("mongoose");
-const slugify = require("slugify");
+
+
+
+
 exports.getAllTours = async (req, res) => {
   try {
     const queryObj = { ...req.query };
