@@ -1,18 +1,25 @@
 const Tour = require("./../models/tourModels");
 
-
-
-
 exports.getAllTours = async (req, res) => {
   try {
+    //Filtering
     const queryObj = { ...req.query };
-    const delObj = ["page", "sort", "limit"];
+    const delObj = ["page","sort", "limit"];
 
     delObj.forEach((el) => {
       delete queryObj[el];
     });
+    //Advanced Sorting
+    let queryString = JSON.stringify(queryObj);
+    queryString = queryString.replace(
+      /\b(gte|gt|lt|lte)\b/g,
+      (match) => `$${match}`
+    );
 
-    const query = Tour.find(queryObj);
+    let query = Tour.find(JSON.parse(queryString));
+    if (req.query.sort) {
+      query = query.sort("price");
+    }
     const tours = await query;
     res.status(200).json({
       status: "success",
