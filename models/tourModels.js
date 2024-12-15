@@ -26,7 +26,6 @@ const tourSchema = new Schema({
   ratingsQuantity: { type: Number, default: 0 },
 
   price: { type: Number, required: true },
-  ratingsAverage: { type: Number, default: 0 },
   priceDiscount: Number,
   summary: { type: String, trim: true, required: true },
   description: { type: String, trim: true },
