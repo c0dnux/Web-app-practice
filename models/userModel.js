@@ -29,6 +29,7 @@ const userSchema = new Schema({
     minLength: [8, "Password must be more than 8 characters"],
     select: false,
   },
+  passwordChangedAt: Date,
 });
 userSchema.pre("save", async function (next) {
   if (!this.isModified("passWord")) return next();
@@ -39,6 +40,20 @@ userSchema.methods.isCorrectPassword = async function (
   hashedPassword
 ) {
   return await bcrypt.compare(userPassword, hashedPassword);
+};
+userSchema.methods.passwordChangedAfter = function (userTimeStamp) {
+
+
+  if (this.passwordChangedAt) {
+    const changedTimeStamp = parseInt(
+      this.passwordChangedAt.getTime() / 1000,
+      10
+    );
+   
+
+    return changedTimeStamp > userTimeStamp;
+  }
+  return false;
 };
 const User = mongoose.model("User", userSchema);
 

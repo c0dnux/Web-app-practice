@@ -15,6 +15,12 @@ const handleDuplErrDB = (err) => {
   const message = `${key} :${value} already exists.`;
   return new AppError(message, 403);
 };
+const handleAuthErr = () => {
+  return new AppError("Action not Allowed,login to get access", 401);
+};
+const handleAuthEXpireErr = () => {
+  return new AppError("Login Timeout,please login again.", 401);
+};
 const sendErrDev = (err, res) => {
   res.status(err.statusCode).json({
     status: err.status,
@@ -31,6 +37,10 @@ const sendErrProduc = (err, res) => {
     });
   } else {
     console.error("Error", err);
+    res.status(500).json({
+      status: "Error",
+      message: "Something went very wrong!",
+    });
   }
 };
 module.exports = (err, req, res, next) => {
@@ -39,11 +49,19 @@ module.exports = (err, req, res, next) => {
   if (process.env.NODE_ENV === "development") {
     sendErrDev(err, res);
   } else if (process.env.NODE_ENV === "production") {
-    let error = JSON.parse(JSON.stringify(err));
+    let error = {
+      ...err,
+      name: err.name || "Unknown Error",
+      code: err.code,
+      message: err.message || "An Unknown error have occurred",
+      stack: err.stack,
+    };
+
     if (error.name === "CastError") error = handleCastErrDB(error);
     if (error.code === 11000) error = handleDuplErrDB(error);
     if (error.name === "ValidationError") error = handleValErrDB(error);
-
+    if (error.name === "JsonWebTokenError") error = handleAuthErr();
+    if (error.name === "TokenExpiredError") error = handleAuthEXpireErr();
     sendErrProduc(error, res);
   }
 };
