@@ -1,7 +1,6 @@
 const catchAsync = require("./../utils/catchAsync");
 const User = require("./../models/userModel");
 const AppErr = require("./../utils/appError");
-const bcrypt = require("bcrypt");
 
 exports.getAllUsers = catchAsync(async (req, res, next) => {
   const users = await User.find();
@@ -19,7 +18,7 @@ exports.deleteUser = catchAsync(async (req, res, next) => {
   const id = req.params.id;
   const deleteUser = await User.findByIdAndDelete(id);
   if (!deleteUser) {
-    return new AppErr("User does not Exist", 400);
+    return next(new AppErr("User does not Exist", 400));
   }
-  res.status(500).json({ status: "Success", data: deleteUser });
+  res.status(200).json({ status: "Success", data: deleteUser });
 });

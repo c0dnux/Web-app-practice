@@ -61,7 +61,7 @@ exports.getAllTours = catchAsync(async (req, res, next) => {
   });
 });
 
-exports.writeTour = catchAsync(async (req, res) => {
+exports.writeTour = catchAsync(async (req, res,next) => {
   const dbRes = await Tour.create(req.body);
   res.status(201).json({
     status: "success",
@@ -79,7 +79,7 @@ exports.getTour = catchAsync(async (req, res, next) => {
   res.status(200).json({ status: "success", data: tour });
 });
 
-exports.updateTour = catchAsync(async (req, res) => {
+exports.updateTour = catchAsync(async (req, res,next) => {
   const id = req.params.id;
   const update = await Tour.findOneAndUpdate({ _id: id }, req.body, {
     new: true,
