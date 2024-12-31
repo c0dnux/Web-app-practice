@@ -2,6 +2,8 @@ const mongoose = require("mongoose");
 const { Schema } = require("mongoose");
 const validator = require("validator");
 const bcrypt = require("bcrypt");
+const { route } = require("../app");
+const crypto = require("crypto");
 
 const DB = "mongodb://localhost:27017/Abdul";
 
@@ -23,6 +25,11 @@ const userSchema = new Schema({
     validate: [validator.isEmail, "Please provide a valid email"],
   },
   photo: { type: String },
+  role: {
+    type: String,
+    enum: ["user", "admin", "guide", "lead-guid"],
+    default: "user",
+  },
   passWord: {
     type: String,
     required: [true, "Provide a password"],
@@ -30,6 +37,8 @@ const userSchema = new Schema({
     select: false,
   },
   passwordChangedAt: Date,
+  passwordResetToken: String,
+  passwordResetExpires: String,
 });
 userSchema.pre("save", async function (next) {
   if (!this.isModified("passWord")) return next();
@@ -42,18 +51,25 @@ userSchema.methods.isCorrectPassword = async function (
   return await bcrypt.compare(userPassword, hashedPassword);
 };
 userSchema.methods.passwordChangedAfter = function (userTimeStamp) {
-
-
   if (this.passwordChangedAt) {
     const changedTimeStamp = parseInt(
       this.passwordChangedAt.getTime() / 1000,
       10
     );
-   
 
     return changedTimeStamp > userTimeStamp;
   }
   return false;
+};
+userSchema.methods.passwordReset = function () {
+  const resetToken = Math.floor(100000 + Math.random() * 900000);
+  this.passwordResetToken = crypto
+    .createHash("sha256")
+    .update(String(resetToken))
+    .digest("hex");
+  this.passwordResetExpires = Date.now() + 10 * 60 * 1000; // Token expires in 10 minutes
+
+  return resetToken;
 };
 const User = mongoose.model("User", userSchema);
 

@@ -3,6 +3,8 @@ const User = require("./../models/userModel");
 const jwt = require("jsonwebtoken");
 const AppErr = require("./../utils/appError");
 const { promisify } = require("util");
+
+const sendEmail = require("./../utils/email");
 const signToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
     expiresIn: "1d",
@@ -10,12 +12,7 @@ const signToken = (id) => {
 };
 
 exports.signup = catchAsync(async (req, res, next) => {
-  const newUser = await User.create({
-    name: req.body.name,
-    email: req.body.email,
-    passWord: req.body.password,
-    passwordChangedAt: req.body.passwordChangedAt,
-  });
+  const newUser = await User.create(req.body);
   const token = signToken(newUser._id);
   res
     .status(201)
@@ -70,3 +67,45 @@ exports.protect = catchAsync(async (req, res, next) => {
   req.user = userExist;
   next();
 });
+
+exports.restrictTo = (...roles) => {
+  return (req, res, next) => {
+    if (!roles.includes(req.user.role)) {
+      return next(
+        new AppErr("You are not allowed to perform this action", 403)
+      );
+    }
+    next();
+  };
+};
+
+exports.forgetPassword = catchAsync(async (req, res, next) => {
+  const user = await User.findOne({ email: req.body.email });
+  if (!user) {
+    return next(new AppErr("No user with the given email", 404));
+  }
+  const resetToken = user.passwordReset();
+  console.log(resetToken);
+
+  await user.save({ validateBeforeSave: false });
+  const resetURL = `${req.protocol}://${req.get(
+    "host"
+  )}/api/v1/users/forgotPassword/${resetToken}`;
+  const message = `Forgot passwod ?Click link to reset ${resetURL}`;
+  try {
+    await sendEmail({
+      email: user.email,
+      subject: "Your password reset token valid for 5min",
+      message,
+    });
+    res.status(200).json({ status: "Success", message: "Token sent to email" });
+  } catch (error) {
+    user.passwordResetToken = undefined;
+    user.passwordResetExpires = undefined;
+    await user.save({ validateBeforeSave: false });
+    console.log(error);
+
+    return next(new AppErr("There was an error resetting password", 500));
+  }
+});
+exports.resetPassword = catchAsync(async (req, res, next) => {});
