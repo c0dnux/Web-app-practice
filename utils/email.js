@@ -48,8 +48,8 @@ const sendEmail = async (options) => {
   const mailOptions = {
     from: sender,
     to: recipients,
-    subject: "Password Reset",
-    text:options.message,
+    subject: options.subject,
+    text: options.message,
     category: "Integration Test",
     sandbox: true,
   };

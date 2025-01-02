@@ -44,6 +44,11 @@ userSchema.pre("save", async function (next) {
   if (!this.isModified("passWord")) return next();
   this.passWord = await bcrypt.hash(this.passWord, 12);
 });
+userSchema.pre("save", function (next) {
+  if (!this.isModified("passwordChangedAt")) return next();
+  this.passwordChangedAt = Date.now();
+  next();
+});
 userSchema.methods.isCorrectPassword = async function (
   userPassword,
   hashedPassword
@@ -67,7 +72,7 @@ userSchema.methods.passwordReset = function () {
     .createHash("sha256")
     .update(String(resetToken))
     .digest("hex");
-  this.passwordResetExpires = Date.now() + 10 * 60 * 1000; // Token expires in 10 minutes
+  this.passwordResetExpires = Date.now() + 5 * 60 * 1000; // Token expires in 10 minutes
 
   return resetToken;
 };
