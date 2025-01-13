@@ -12,7 +12,6 @@ exports.signup = catchAsync(async (req, res, next) => {
   console.log(req.body.email);
 
   const newUser = await User.create(req.body);
-  console.log(newUser);
 
   // const token = signToken(newUser._id);
   // res
@@ -31,7 +30,6 @@ exports.signin = catchAsync(async (req, res, next) => {
   if (!user) {
     return next(new AppErr("Incorrect email or password.", 404));
   }
-  console.log(user);
 
   if (!user.active) {
     return next(new AppErr("This acount is deleted", 401));
@@ -43,7 +41,7 @@ exports.signin = catchAsync(async (req, res, next) => {
   }
   // const token = signToken(user._id);
   // res.status(200).json({ status: "Success", token, data: user });
-  signTokenHandler(200, "Logged in", res, user);
+  signTokenHandler(200, "Logged in", res, user, req.rateLimit);
 });
 
 exports.protect = catchAsync(async (req, res, next) => {

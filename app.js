@@ -5,10 +5,34 @@ const tourRouter = require("./routes/tourRoutes");
 const userRouter = require("./routes/userRoutes");
 const AppError = require("./utils/appError");
 const globalErrHandler = require("./controllers/errorController");
-//MiddleWares
+const rateLimit = require("express-rate-limit");
+//            Global MiddleWares
+
+
+// Development Log
+
 if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));
 }
+
+
+// Limitter
+const limiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 60 minutes
+  limit: 30, // Limit each IP to 30 requests per `window` (here, per 60 minutes).
+  standardHeaders: "draft-8", // draft-6: `RateLimit-*` headers; draft-7 & draft-8: combined `RateLimit` header
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers.
+  // store: ... , // Redis, Memcached, etc. See below.
+  handler: (req, res, next) => {
+    // Custom response when the limit is exceeded
+    return next(
+      new AppError("Trial limit exceeded. Upgrade to continue.", 429)
+    );
+  },
+});
+
+
+app.use(limiter);
 app.use(express.json());
 
 app.use("/api/v1/tours", tourRouter);
