@@ -4,37 +4,46 @@ const jwt = require("jsonwebtoken");
 const AppErr = require("./../utils/appError");
 const { promisify } = require("util");
 const crypto = require("crypto");
-
+const { signTokenHandler } = require("./../utils/customfuncs");
 const sendEmail = require("./../utils/email");
 const AppError = require("./../utils/appError");
-const signToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: "1d",
-  });
-};
 
 exports.signup = catchAsync(async (req, res, next) => {
+  console.log(req.body.email);
+
   const newUser = await User.create(req.body);
-  const token = signToken(newUser._id);
-  res
-    .status(201)
-    .json({ status: "Success", token, Number: newUser.length, data: newUser });
+  console.log(newUser);
+
+  // const token = signToken(newUser._id);
+  // res
+  //   .status(201)
+  //   .json({ status: "Success", token, Number: newUser.length, data: newUser });
+  signTokenHandler(201, "user created", res, newUser);
 });
 
 exports.signin = catchAsync(async (req, res, next) => {
   const { email, password } = req.body;
   if (!email || !password) {
-    return next(new AppErr("Provide email and password"));
+    return next(new AppErr("Provide email and password", 400));
   }
 
-  const user = await User.findOne({ email }).select("+passWord");
+  const user = await User.findOne({ email }).select("+passWord +active");
+  if (!user) {
+    return next(new AppErr("Incorrect email or password.", 404));
+  }
+  console.log(user);
+
+  if (!user.active) {
+    return next(new AppErr("This acount is deleted", 401));
+  }
   const isCorrect = await user.isCorrectPassword(password, user.passWord);
-  const token = signToken(user._id);
 
   if (!user || !isCorrect) {
     return next(new AppErr("Incorrect username or password", 401));
   }
-  res.status(200).json({ status: "Success", token, data: user });
+  // const token = signToken(user._id);
+  // res.status(200).json({ status: "Success", token, data: user });
+  signTokenHandler(200, "Logged in", res, user);
 });
 
 exports.protect = catchAsync(async (req, res, next) => {
@@ -56,7 +65,7 @@ exports.protect = catchAsync(async (req, res, next) => {
   const userExist = await User.findById(decoded.id);
   if (!userExist) {
     return next(
-      AppErr("The user belonging to this token no longer exists", 401)
+      new AppErr("The user belonging to this token no longer exists", 401)
     );
   }
   //Check if user has changed password after Token was issued
@@ -89,7 +98,7 @@ exports.forgetPassword = catchAsync(async (req, res, next) => {
   const resetToken = user.passwordReset();
   console.log(resetToken);
 
-  await user.save({ validateBeforeSave: false });
+  await user.save();
   const resetURL = `${req.protocol}://${req.get(
     "host"
   )}/api/v1/users/resetPassword/${resetToken}`;
@@ -130,9 +139,45 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
   user.passwordResetExpires = undefined;
   await user.save();
   console.log(user, hashToken);
+  // const token = signToken(user._id);
+
+  // res
+  //   .status(200)
+  //   .json({ status: "Success", message: "Updated your password", token });
+  signTokenHandler(200, "Check Email", res, user);
+});
+exports.updatePassword = catchAsync(async (req, res, next) => {
+  const user = await User.findById(req.user.id).select("+passWord");
+  if (
+    !(await user.isCorrectPassword(req.body.passwordCurrent, user.passWord))
+  ) {
+    return next(new AppErr("Your current password is wrong", 401));
+  }
+
+  user.passWord = req.body.password;
+
+  await user.save();
+
   const token = signToken(user._id);
 
   res
     .status(200)
-    .json({ status: "Success", message: "Updated your password", token });
+    .json({ status: "Success", message: "Password updated", token });
+  signTokenHandler(200, "Password updated", res, user);
+});
+
+exports.updatePassword = catchAsync(async (req, res, next) => {
+  const user = await User.findById(req.user.id).select("+passWord");
+  if (
+    !(await user.isCorrectPassword(req.body.passwordCurrent, user.passWord))
+  ) {
+    return next(new AppError("Your current password is wrong", 401));
+  }
+  user.passWord = req.body.newPassword;
+  await user.save();
+  // const token = signToken(user._id);
+  // res
+  //   .status(200)
+  //   .json({ status: "Success", message: "Password updated", token });
+  signTokenHandler(200, "Password updated", res, user);
 });
