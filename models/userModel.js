@@ -39,22 +39,33 @@ const userSchema = new Schema({
   passwordChangedAt: Date,
   passwordResetToken: String,
   passwordResetExpires: String,
+  active: {
+    type: Boolean,
+    default: true,
+    select: false,
+  },
 });
 userSchema.pre("save", async function (next) {
   if (!this.isModified("passWord")) return next();
   this.passWord = await bcrypt.hash(this.passWord, 12);
 });
 userSchema.pre("save", function (next) {
-  if (!this.isModified("passwordChangedAt")) return next();
-  this.passwordChangedAt = Date.now();
+  if (!this.isModified("passWord") || this.is) return next();
+  this.passwordChangedAt = Date.now() - 1000;
   next();
 });
+
 userSchema.methods.isCorrectPassword = async function (
   userPassword,
   hashedPassword
 ) {
   return await bcrypt.compare(userPassword, hashedPassword);
 };
+// userSchema.pre(/^find/, function (next) {
+//   this.find({ active: { $ne: false } });
+
+//   next();
+// });
 userSchema.methods.passwordChangedAfter = function (userTimeStamp) {
   if (this.passwordChangedAt) {
     const changedTimeStamp = parseInt(
@@ -72,7 +83,7 @@ userSchema.methods.passwordReset = function () {
     .createHash("sha256")
     .update(String(resetToken))
     .digest("hex");
-  this.passwordResetExpires = Date.now() + 5 * 60 * 1000; // Token expires in 10 minutes
+  this.passwordResetExpires = Date.now() + 5 * 60 * 1000; // Token expires in 5 minutes
 
   return resetToken;
 };
