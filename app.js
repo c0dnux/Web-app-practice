@@ -6,15 +6,31 @@ const userRouter = require("./routes/userRoutes");
 const AppError = require("./utils/appError");
 const globalErrHandler = require("./controllers/errorController");
 const rateLimit = require("express-rate-limit");
+const helmet = require("helmet");
+const ems = require("express-mongo-sanitize");
+const sanitizeHtml = require("sanitize-html");
+const hpp = require("hpp");
 //            Global MiddleWares
 
+//Set security HTTP headers
+app.use(helmet());
+app.use(
+  helmet.contentSecurityPolicy({
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "https: 'unsafe-inline'"],
+      imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: ["'self'"],
+    },
+  })
+);
 
 // Development Log
 
 if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));
 }
-
 
 // Limitter
 const limiter = rateLimit({
@@ -31,10 +47,42 @@ const limiter = rateLimit({
   },
 });
 
-
 app.use(limiter);
+//Body Parser (req.body)
 app.use(express.json());
 
+//data sanitization against NoSQL query injection
+app.use(ems());
+
+//Prevent parameter pollution
+app.use(
+  hpp({
+    whitelist: [
+      "duration",
+      "ratingsQuantity",
+      "ratingsAverage",
+      "maxGroupSize",
+      "difficulty",
+      "price",
+    ],
+  })
+);
+
+//Data sanitization against XSS
+app.use((req, res, next) => {
+  if (req.body) {
+    req.body = JSON.parse(
+      JSON.stringify(req.body, (key, value) =>
+        typeof value === "string"
+          ? sanitizeHtml(value, { allowedTags: [], allowedAttributes: {} })
+          : value
+      )
+    );
+  }
+  next();
+});
+
+///Route handlers
 app.use("/api/v1/tours", tourRouter);
 app.use("/api/v1/users", userRouter);
 //Catch undefinded path
