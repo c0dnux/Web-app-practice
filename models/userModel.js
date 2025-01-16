@@ -27,7 +27,7 @@ const userSchema = new Schema({
   photo: { type: String },
   role: {
     type: String,
-    enum: ["user", "admin", "guide", "lead-guid"],
+    enum: ["user", "admin", "guide", "lead-guide"],
     default: "user",
   },
   passWord: {
