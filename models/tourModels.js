@@ -50,6 +50,22 @@ const tourSchema = new Schema(
     created: { type: Date, default: Date.now() },
     startDates: [Date],
     secretTour: { type: Boolean, default: false },
+    startLocation: {
+      type: { type: String, default: "Point", enum: ["Point"] },
+      coordinates: [Number],
+      address: String,
+      description: String,
+    },
+    locations: [
+      {
+        type: { type: String, default: "Point" },
+        coordinates: [Number],
+        address: String,
+        description: String,
+        day: Number,
+      },
+    ],
+    guides: [{ type: Schema.Types.ObjectId, ref: "User" }],
   },
   { toJSON: { virtuals: true }, toObject: { virtuals: true } }
 );
@@ -91,7 +107,6 @@ tourSchema.pre("aggregate", function (next) {
   next();
 });
 
-;
 const Tour = mongoose.model("Tour", tourSchema);
 
 module.exports = Tour;
