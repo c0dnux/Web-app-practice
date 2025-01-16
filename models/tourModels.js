@@ -93,6 +93,14 @@ tourSchema.pre(/^find/, function (next) {
   this.start = Date.now();
   next();
 });
+tourSchema.pre(/^find/, function (next) {
+  this.populate({
+    path: "guides",
+    select:
+      "-passwordChangedAt -role -__v -active -passwordResetToken -passwordResetExpires -passWord",
+  });
+  next();
+});
 tourSchema.post(/^find/, function (docs, next) {
   // console.log(docs);
   console.log(`${Date.now() - this.start}`);

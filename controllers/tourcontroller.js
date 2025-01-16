@@ -74,7 +74,7 @@ exports.getTour = catchAsync(async (req, res, next) => {
 
   const tour = await Tour.findById(id);
   if (!tour) {
-    return next(new AppError(`No user with this id found`, 404));
+    return next(new AppError(`No tour with this id found`, 404));
   }
 
   res.status(200).json({ status: "success", data: tour });
