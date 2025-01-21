@@ -3,6 +3,7 @@ const app = express();
 const morgan = require("morgan");
 const tourRouter = require("./routes/tourRoutes");
 const userRouter = require("./routes/userRoutes");
+const reviewRoutes = require("./routes/reviewRoutes");
 const AppError = require("./utils/appError");
 const globalErrHandler = require("./controllers/errorController");
 const rateLimit = require("express-rate-limit");
@@ -85,6 +86,8 @@ app.use((req, res, next) => {
 ///Route handlers
 app.use("/api/v1/tours", tourRouter);
 app.use("/api/v1/users", userRouter);
+app.use("/api/v1/reviews", reviewRoutes);
+
 //Catch undefinded path
 app.all("*", (req, res, next) => {
   // res

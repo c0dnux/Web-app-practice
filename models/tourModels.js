@@ -5,12 +5,11 @@ const slugify = require("slugify");
 dotenv.config({ path: "./config.env" });
 
 const DB = process.env.DB_LOCAL;
-console.log(DB);
 
 mongoose
   .connect(DB)
   .then(() => {
-    console.log("Database connection successful");
+    console.log("Tour DB connection successful");
   })
   .catch((err) => {
     console.error("Database connection error:", err);
