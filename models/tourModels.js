@@ -71,7 +71,11 @@ const tourSchema = new Schema(
 tourSchema.virtual("durationWeeks").get(function () {
   return this.duration / 7;
 });
-
+tourSchema.virtual("reviews", {
+  ref: "Review",
+  foreignField: "tourRef",
+  localField: "_id",
+});
 //"Save"Document middleware runs before .save()or .create() but not on inserMany
 tourSchema.pre("save", function (next) {
   this.slug = slugify(this.name, { lower: true });
@@ -97,7 +101,7 @@ tourSchema.pre(/^find/, function (next) {
     path: "guides",
     select:
       "-passwordChangedAt -role -__v -active -passwordResetToken -passwordResetExpires -passWord",
-  });
+  }).populate("reviews");
   next();
 });
 tourSchema.post(/^find/, function (docs, next) {
