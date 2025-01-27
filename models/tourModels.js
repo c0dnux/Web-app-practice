@@ -101,7 +101,7 @@ tourSchema.pre(/^find/, function (next) {
     path: "guides",
     select:
       "-passwordChangedAt -role -__v -active -passwordResetToken -passwordResetExpires -passWord",
-  }).populate("reviews");
+  });
   next();
 });
 tourSchema.post(/^find/, function (docs, next) {
