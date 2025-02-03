@@ -2,6 +2,7 @@ const Tour = require("./../models/tourModels");
 const APIFeatures = require("./../utils/apiFeatures");
 const catchAsync = require("./../utils/catchAsync");
 const AppError = require("./../utils/appError");
+const centralController = require("./centralcontroller");
 //Alias Middle WAre
 exports.aliasTopTours = (req, res, next) => {
   req.query.limit = "5";
@@ -91,15 +92,15 @@ exports.updateTour = catchAsync(async (req, res, next) => {
   });
   res.status(200).json({ status: "success", data: update });
 });
-
-exports.deletTour = catchAsync(async (req, res, next) => {
-  const id = req.params.id;
-  const deleted = await Tour.deleteOne({ _id: id });
-  if (deleted.deletedCount === 0) {
-    return next(new AppError("No user with this id found", 404));
-  }
-  res.status(200).json({ status: "success", data: deleted });
-});
+exports.deletTour = centralController.deleteOne(Tour);
+// exports.deletTour = catchAsync(async (req, res, next) => {
+//   const id = req.params.id;
+//   const deleted = await Tour.deleteOne({ _id: id });
+//   if (deleted.deletedCount === 0) {
+//     return next(new AppError("No user with this id found", 404));
+//   }
+//   res.status(200).json({ status: "success", data: deleted });
+// });
 
 exports.getTourStats = catchAsync(async (req, res, next) => {
   const stats = await Tour.aggregate([
