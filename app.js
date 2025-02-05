@@ -10,6 +10,7 @@ const rateLimit = require("express-rate-limit");
 const helmet = require("helmet");
 const ems = require("express-mongo-sanitize");
 const sanitizeHtml = require("sanitize-html");
+
 const hpp = require("hpp");
 //            Global MiddleWares
 
@@ -82,7 +83,8 @@ app.use((req, res, next) => {
   }
   next();
 });
-
+app.set("view engine", "pug");
+app.set("views", "./views");
 ///Route handlers
 app.use("/api/v1/tours", tourRouter);
 app.use("/api/v1/users", userRouter);
@@ -90,13 +92,6 @@ app.use("/api/v1/reviews", reviewRoutes);
 
 //Catch undefinded path
 app.all("*", (req, res, next) => {
-  // res
-  //   .status(404)
-  //   .json({ status: "Failed", message: `Cant find ${req.originalUrl}` });
-  // const err = new Error(`Cant find ${req.originalUrl}`);
-  // err.status = "Fail";
-  // err.statusCode = 404;
-
   //whenever we pass somrthing in the next it assumes there is an error
   next(new AppError(`Can't find ${req.originalUrl} on this server.`, 404));
 });

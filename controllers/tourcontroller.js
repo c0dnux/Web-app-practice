@@ -55,7 +55,9 @@ exports.getAllTours = catchAsync(async (req, res, next) => {
     .limiting()
     .paginate();
 
+  // const tours = await features.query.explain();
   const tours = await features.query;
+
   res.status(200).json({
     status: "success",
     result: tours.length,
@@ -83,16 +85,69 @@ exports.getTour = catchAsync(async (req, res, next) => {
 
   res.status(200).json({ status: "success", data: tour });
 });
-
-exports.updateTour = catchAsync(async (req, res, next) => {
-  const id = req.params.id;
-  const update = await Tour.findOneAndUpdate({ _id: id }, req.body, {
-    new: true,
-    runValidators: true,
+exports.getToursWithin = catchAsync(async (req, res, next) => {
+  const { distance, latlng, unit } = req.params;
+  const [lat, lng] = latlng.split(",");
+  const radius = unit === "mi" ? distance / 3963.2 : distance / 6378.1;
+  if (!lat || !lng) {
+    return next(
+      new AppError(
+        "Please provide latitude and longitude in the format lat,lng",
+        400
+      )
+    );
+  }
+  const tours = await Tour.find({
+    startLocation: { $geoWithin: { $centerSphere: [[lng, lat], radius] } },
   });
-  res.status(200).json({ status: "success", data: update });
+  res
+    .status(200)
+    .json({ status: "Success", results: tours.length, data: tours });
 });
-exports.deletTour = centralController.deleteOne(Tour);
+exports.getDistances = catchAsync(async (req, res, next) => {
+  const { latlng, unit } = req.params;
+  const [lat, lng] = latlng.split(",");
+  const multiplier = unit === "mi" ? 0.000621371 : 0.001;
+  if (!lat || !lng) {
+    return next(
+      new AppError(
+        "Please provide latitude and longitude in the format lat,lng",
+        400
+      )
+    );
+  }
+  const distances = await Tour.aggregate([
+    {
+      $geoNear: {
+        near: {
+          type: "Point",
+          coordinates: [Number(lng), Number(lat)],
+        },
+        distanceField: "distance",
+        distanceMultiplier: multiplier,
+      },
+    },
+    {
+      $project: {
+        distance: 1,
+        name: 1,
+      },
+    },
+  ]);
+  res.status(200).json({ status: "Success", data: distances });
+});
+exports.updateTour = centralController.updateOne(Tour);
+
+// exports.updateTour = catchAsync(async (req, res, next) => {
+//   const id = req.params.id;
+//   const update = await Tour.findOneAndUpdate({ _id: id }, req.body, {
+//     new: true,
+//     runValidators: true,
+//   });
+//   res.status(200).json({ status: "success", data: update });
+// });
+
+exports.deleteTour = centralController.deleteOne(Tour);
 // exports.deletTour = catchAsync(async (req, res, next) => {
 //   const id = req.params.id;
 //   const deleted = await Tour.deleteOne({ _id: id });
