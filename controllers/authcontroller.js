@@ -9,9 +9,12 @@ const sendEmail = require("./../utils/email");
 const AppError = require("./../utils/appError");
 
 exports.signup = catchAsync(async (req, res, next) => {
-  console.log(req.body.email);
-
-  const newUser = await User.create(req.body);
+  const allowed = ["name", "email", "password", "photo"];
+  let gotten = {};
+  allowed.forEach((elem) => {
+    if (req.body[elem]) gotten[elem] = req.body[elem];
+  });
+  const newUser = await User.create(gotten);
 
   // const token = signToken(newUser._id);
   // res
@@ -26,7 +29,7 @@ exports.signin = catchAsync(async (req, res, next) => {
     return next(new AppErr("Provide email and password", 400));
   }
 
-  const user = await User.findOne({ email }).select("+passWord +active");
+  const user = await User.findOne({ email }).select("+password +active");
   if (!user) {
     return next(new AppErr("Incorrect email or password.", 404));
   }
@@ -34,7 +37,7 @@ exports.signin = catchAsync(async (req, res, next) => {
   if (!user.active) {
     return next(new AppErr("This acount is deleted", 401));
   }
-  const isCorrect = await user.isCorrectPassword(password, user.passWord);
+  const isCorrect = await user.isCorrectPassword(password, user.password);
 
   if (!user || !isCorrect) {
     return next(new AppErr("Incorrect username or password", 401));
@@ -94,7 +97,6 @@ exports.forgetPassword = catchAsync(async (req, res, next) => {
     return next(new AppErr("No user with the given email", 404));
   }
   const resetToken = user.passwordReset();
-  console.log(resetToken);
 
   await user.save();
   const resetURL = `${req.protocol}://${req.get(
@@ -112,7 +114,6 @@ exports.forgetPassword = catchAsync(async (req, res, next) => {
     user.passwordResetToken = undefined;
     user.passwordResetExpires = undefined;
     await user.save({ validateBeforeSave: false });
-    console.log(error);
 
     return next(new AppErr("There was an error resetting password", 500));
   }
@@ -132,7 +133,7 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
   if (!user) {
     return next(new AppError("Reset token is invalid or expired", 400));
   }
-  user.passWord = req.body.password;
+  user.password = req.body.password;
   user.passwordResetToken = undefined;
   user.passwordResetExpires = undefined;
   await user.save();
@@ -145,14 +146,14 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
   signTokenHandler(200, "Check Email", res, user);
 });
 exports.updatePassword = catchAsync(async (req, res, next) => {
-  const user = await User.findById(req.user.id).select("+passWord");
+  const user = await User.findById(req.user.id).select("+password");
   if (
-    !(await user.isCorrectPassword(req.body.passwordCurrent, user.passWord))
+    !(await user.isCorrectPassword(req.body.passwordCurrent, user.password))
   ) {
     return next(new AppErr("Your current password is wrong", 401));
   }
 
-  user.passWord = req.body.password;
+  user.password = req.body.password;
 
   await user.save();
 
@@ -165,13 +166,13 @@ exports.updatePassword = catchAsync(async (req, res, next) => {
 });
 
 exports.updatePassword = catchAsync(async (req, res, next) => {
-  const user = await User.findById(req.user.id).select("+passWord");
+  const user = await User.findById(req.user.id).select("+password");
   if (
-    !(await user.isCorrectPassword(req.body.passwordCurrent, user.passWord))
+    !(await user.isCorrectPassword(req.body.passwordCurrent, user.password))
   ) {
     return next(new AppError("Your current password is wrong", 401));
   }
-  user.passWord = req.body.newPassword;
+  user.password = req.body.newPassword;
   await user.save();
   // const token = signToken(user._id);
   // res

@@ -28,6 +28,7 @@ const tourSchema = new Schema(
       default: 0,
       min: [1, "Min rating is 1"],
       max: [5, "Max rating is 5"],
+      set: (val) => Math.round(val * 10) / 10,
     },
     ratingsQuantity: { type: Number, default: 0 },
 
@@ -100,7 +101,7 @@ tourSchema.pre(/^find/, function (next) {
   this.populate({
     path: "guides",
     select:
-      "-passwordChangedAt -role -__v -active -passwordResetToken -passwordResetExpires -passWord",
+      "-passwordChangedAt -role -__v -active -passwordResetToken -passwordResetExpires -password",
   });
   next();
 });
@@ -112,12 +113,15 @@ tourSchema.post(/^find/, function (docs, next) {
 });
 
 //Aggregation Malware
-tourSchema.pre("aggregate", function (next) {
-  this._pipeline.unshift({ $match: { secretTour: { $ne: true } } });
-  console.log(this._pipeline);
-  next();
-});
-
+// tourSchema.pre("aggregate", function (next) {
+//   this._pipeline.unshift({ $match: { secretTour: { $ne: true } } });
+//   console.log(this._pipeline);
+//   next();
+// });
+//Set Indexes for faster search and because we will be searching for price and ratingsAverage regularly
+tourSchema.index({ price: 1, ratingsAverage: -1 });
+tourSchema.index({ slug: 1 });
+tourSchema.index({ startLocation: "2dsphere" });
 const Tour = mongoose.model("Tour", tourSchema);
 
 module.exports = Tour;

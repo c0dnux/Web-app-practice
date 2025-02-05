@@ -5,8 +5,8 @@ const signToken = (id) => {
     expiresIn: process.env.JWT_EXPIRES_IN,
   });
 };
-exports.signTokenHandler = (statusCode, message, res, user, trialLimit) => {
-  console.log(trialLimit);
+exports.signTokenHandler = (statusCode, message, res, user) => {
+  // console.log(trialLimit);
 
   const token = signToken(user._id);
 
@@ -18,7 +18,7 @@ exports.signTokenHandler = (statusCode, message, res, user, trialLimit) => {
     secure: process.env.NODE_ENV === "production",
   };
   res.cookie("jwt", token, cookieOptions);
-  user.passWord = undefined;
+  user.password = undefined;
   res.status(statusCode).json({
     status: "Success",
     token,

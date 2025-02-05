@@ -2,7 +2,6 @@ const mongoose = require("mongoose");
 const { Schema } = require("mongoose");
 const validator = require("validator");
 const bcrypt = require("bcrypt");
-const { route } = require("../app");
 const crypto = require("crypto");
 
 const DB = "mongodb://localhost:27017/Abdul";
@@ -30,7 +29,7 @@ const userSchema = new Schema({
     enum: ["user", "admin", "guide", "lead-guide"],
     default: "user",
   },
-  passWord: {
+  password: {
     type: String,
     required: [true, "Provide a password"],
     minLength: [8, "Password must be more than 8 characters"],
@@ -46,12 +45,14 @@ const userSchema = new Schema({
   },
 });
 userSchema.pre("save", async function (next) {
-  if (!this.isModified("passWord")) return next();
-  this.passWord = await bcrypt.hash(this.passWord, 12);
-});
-userSchema.pre("save", function (next) {
-  if (!this.isModified("passWord") || this.is) return next();
+  if (!this.isModified("password")) return next();
+
+  // Hash password
+  this.password = await bcrypt.hash(this.password, 12);
+
+  // Set passwordChangedAt field
   this.passwordChangedAt = Date.now() - 1000;
+
   next();
 });
 

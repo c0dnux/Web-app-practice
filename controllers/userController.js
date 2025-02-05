@@ -8,7 +8,49 @@ exports.getAllUsers = catchAsync(async (req, res, next) => {
     .status(200)
     .json({ status: "Success", Length: users.length, data: users });
 });
+exports.createUser = catchAsync(async (req, res, next) => {
+  const newUser = await User.create(req.body);
+  if (!newUser) return next(new AppErr("Error creating User.", 404));
+  res.status(201).json({ status: "Success", data: newUser });
+});
+exports.updateUser = catchAsync(async (req, res, next) => {
+  const updatedUser = await User.findById(req.params.id).select(
+    "+active +password"
+  );
 
+  if (!updatedUser) return next(new AppErr("User not found", 404));
+  const allowed = ["name", "email", "password", "photo", "role", "active"];
+
+  allowed.forEach((elem) => {
+    if (req.body[elem] !== undefined) updatedUser[elem] = req.body[elem];
+  });
+
+  await updatedUser.save();
+  res.status(200).json({
+    status: "success",
+    data: updatedUser,
+  });
+});
+exports.deleteUser = catchAsync(async (req, res, next) => {
+  const deletedUser = await User.findById(req.params.id).select("+active");
+  if (!deletedUser) return next(new AppErr("User not found", 404));
+  deletedUser.active = false;
+  await deletedUser.save();
+  res.status(200).json({
+    status: "success",
+    message: "User deactivated successfully",
+  });
+});
+
+exports.getUser = catchAsync(async (req, res, next) => {
+  const user = await User.findById(req.params.id).select("+active");
+  if (!user) return next(new AppErr("User not found", 400));
+  res.status(200).json({ status: "Success", data: user });
+});
+exports.getMe = catchAsync(async (req, res, next) => {
+  req.params.id = req.user._id;
+  next();
+});
 exports.updateMe = catchAsync(async (req, res, next) => {
   // const user = await User.findById(req.user._id);
   // if (req.body.name) user.name = req.body.name;

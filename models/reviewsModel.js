@@ -53,7 +53,6 @@ reviewSchema.pre(/^find/, function (next) {
 
 // Calculate ratingsAverage and ratingsQuantity in the Review model
 reviewSchema.statics.calcAverageRatings = async function (tourId) {
-
   const stats = await this.aggregate([
     // Match reviews for the given tour
     { $match: { tourRef: new mongoose.Types.ObjectId(tourId) } },
@@ -78,10 +77,22 @@ reviewSchema.statics.calcAverageRatings = async function (tourId) {
     // If no reviews exist, set ratingsQuantity and ratingsAverage to default values
     await Tour.findByIdAndUpdate(tourId, {
       ratingsQuantity: 0,
-      ratingsAverage: 0, // Default value, assuming new tours have an average rating of 4.5
+      ratingsAverage: 4.5, // Default value, assuming new tours have an average rating of 4.5
     });
   }
 };
+reviewSchema.post("save", function () {
+  this.constructor.calcAverageRatings(this.tourRef);
+});
+reviewSchema.post(/^findOneAnd/, async function (doc) {
+  if (doc) {
+    await doc.constructor.calcAverageRatings(doc.tourRef);
+  }
+});
+// reviewSchema.pre(/^findOneAnd/, async function (next) {
+//   this.r = await this.findOne();
+//   next();
+// });
 
 const Reviews = mongoose.model("Review", reviewSchema);
 

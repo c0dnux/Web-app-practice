@@ -12,15 +12,22 @@ const authController = require("../controllers/authcontroller");
 // router
 //   .route("/:tourId/reviews/:reviewId")
 //   .get(authController.protect, reviewsController.getReview);
-
+router.use(authController.protect);
 router
   .route("/")
-  .post(authController.protect, reviewsController.makeReview)
-  .get(authController.protect, reviewsController.getAllReviews)
-  .patch(authController.protect, reviewsController.updateReview);
+  .post(reviewsController.makeReview)
+  .get(reviewsController.getAllReviews);
 
 router
   .route("/:id")
-  .get(authController.protect, reviewsController.getReview)
-  .delete(authController.protect, reviewsController.deleteReview);
+  .get(reviewsController.getReview)
+  .delete(
+    authController.restrictTo("user", "admin"),
+    reviewsController.deleteReview
+  )
+  .patch(
+    authController.restrictTo("user", "admin"),
+    reviewsController.updateReview
+  );
+
 module.exports = router;
