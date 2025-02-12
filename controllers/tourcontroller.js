@@ -56,7 +56,7 @@ exports.getAllTours = catchAsync(async (req, res, next) => {
     .paginate();
 
   // const tours = await features.query.explain();
-  const tours = await features.query;
+  const tours = await features.query.populate("reviews");
 
   res.status(200).json({
     status: "success",
@@ -79,6 +79,7 @@ exports.getTour = catchAsync(async (req, res, next) => {
     path: "reviews",
     select: "-createdAt -__v",
   });
+  
   if (!tour) {
     return next(new AppError(`No tour with this id found`, 404));
   }
