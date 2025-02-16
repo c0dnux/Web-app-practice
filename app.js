@@ -6,6 +6,7 @@ const tourRouter = require("./routes/tourRoutes");
 const userRouter = require("./routes/userRoutes");
 const reviewRoutes = require("./routes/reviewRoutes");
 const viewRouter = require("./routes/viewRoutes");
+const cookieParser = require("cookie-parser");
 const AppError = require("./utils/appError");
 const globalErrHandler = require("./controllers/errorController");
 const rateLimit = require("express-rate-limit");
@@ -56,6 +57,8 @@ app.use(express.static(path.join(__dirname, "public")));
 app.use(limiter);
 //Body Parser (req.body)
 app.use(express.json());
+// app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
 //data sanitization against NoSQL query injection
 app.use(ems());
@@ -87,6 +90,15 @@ app.use((req, res, next) => {
   }
   next();
 });
+app.use((req, res, next) => {
+  res.setHeader(
+    "Content-Security-Policy",
+
+    "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com"
+  );
+  next();
+});
+
 app.set("view engine", "pug");
 app.set("views", path.join(__dirname, "views"));
 ///Route handlers

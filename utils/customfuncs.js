@@ -16,14 +16,15 @@ exports.signTokenHandler = (statusCode, message, res, user) => {
     ),
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
+    sameSite: "Strict",
   };
+
   res.cookie("jwt", token, cookieOptions);
   user.password = undefined;
-  res.status(statusCode).json({
+  return res.status(statusCode).json({
     status: "Success",
     token,
     message: message,
-    Number: user.length,
-    data: user,
+    data: { user },
   });
 };
