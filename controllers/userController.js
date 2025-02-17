@@ -56,6 +56,7 @@ exports.updateMe = catchAsync(async (req, res, next) => {
   // if (req.body.name) user.name = req.body.name;
   // if (req.body.email) user.email = req.body.email;
   // await user.save();
+  
   const allowedFields = ["name", "email", "photo"];
   const updates = {};
   allowedFields.forEach((el) => {

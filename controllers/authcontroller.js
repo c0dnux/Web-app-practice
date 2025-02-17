@@ -81,6 +81,7 @@ exports.protect = catchAsync(async (req, res, next) => {
   }
   //Give access
   req.user = userExist;
+  res.locals.user = userExist;
   next();
 });
 //Only for rendered pages
@@ -214,7 +215,7 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
 exports.updatePassword = catchAsync(async (req, res, next) => {
   const user = await User.findById(req.user.id).select("+password");
   if (
-    !(await user.isCorrectPassword(req.body.passwordCurrent, user.password))
+    !(await user.isCorrectPassword(req.body.currentPassword, user.password))
   ) {
     return next(new AppError("Your current password is wrong", 401));
   }
