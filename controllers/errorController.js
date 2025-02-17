@@ -77,7 +77,7 @@ module.exports = (err, req, res, next) => {
     //   message: err.message || "An Unknown error have occurred",
     //   stack: err.stack,
     // };
-    const error = {
+    let error = {
       name: err.name ?? "Unknown Error",
       code: err.code ?? "Unknown Code",
       message: err.message ?? "An unknown error has occurred",

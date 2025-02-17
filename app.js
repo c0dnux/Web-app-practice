@@ -90,11 +90,18 @@ app.use((req, res, next) => {
   }
   next();
 });
+// app.use((req, res, next) => {
+//   res.setHeader(
+//     "Content-Security-Policy",
+
+//     "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com"
+//   );
+//   next();
+// });
 app.use((req, res, next) => {
   res.setHeader(
     "Content-Security-Policy",
-
-    "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com"
+    "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com;"
   );
   next();
 });

@@ -597,13 +597,55 @@ function hmrAccept(bundle /*: ParcelRequire */ , id /*: string */ ) {
 
 },{}],"f2QDv":[function(require,module,exports,__globalThis) {
 var _loginJs = require("./login.js");
-var _alertJs = require("./alert.js");
 var _mapboxJs = require("./mapbox.js");
+var _updateSettingsJs = require("./updateSettings.js");
+//DOM ELEMENTS
+const map = document.getElementById("map");
+const loginForm = document.querySelector(".form--login");
+const logoutBtn = document.querySelector(".nav__el--logout");
+const userDataForm = document.querySelector(".form-user-data");
+const userPassword = document.querySelector(".form-user-settings");
+//VALUES
+//DELEGATION
+if (map) {
+    const locations = JSON.parse(map.dataset.locations);
+    (0, _mapboxJs.displayMap)(locations);
+}
+if (loginForm) loginForm.addEventListener("submit", async (e)=>{
+    e.preventDefault();
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
+    await (0, _loginJs.login)(email, password);
+});
+if (logoutBtn) logoutBtn.addEventListener("click", async (e)=>{
+    e.preventDefault();
+    await (0, _loginJs.logout)();
+});
+if (userDataForm) userDataForm.addEventListener("submit", async (e)=>{
+    e.preventDefault();
+    const name = document.getElementById("name").value;
+    const email = document.getElementById("email").value;
+    await (0, _updateSettingsJs.updateMe)({
+        name,
+        email
+    }, "Data");
+});
+if (userPassword) userPassword.addEventListener("submit", async (e)=>{
+    e.preventDefault();
+    const currentPassword = document.getElementById("password-current").value;
+    const newPassword = document.getElementById("password").value;
+    await (0, _updateSettingsJs.updateMe)({
+        currentPassword,
+        newPassword
+    }, "Password");
+});
 
-},{"./login.js":"7yHem","./alert.js":"kxdiQ","./mapbox.js":"3zDlz"}],"7yHem":[function(require,module,exports,__globalThis) {
+},{"./login.js":"7yHem","./mapbox.js":"3zDlz","./updateSettings.js":"l3cGY"}],"7yHem":[function(require,module,exports,__globalThis) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "login", ()=>login);
+parcelHelpers.export(exports, "logout", ()=>logout);
+var _alertJs = require("./alert.js");
 const login = async (email, password)=>{
     try {
         const res = await axios.post("/api/v1/users/login", {
@@ -613,23 +655,27 @@ const login = async (email, password)=>{
             withCredentials: true
         });
         if (res.data.status === "Success") {
-            alert("Logged in successfully");
+            (0, _alertJs.showAlert)("success", "Logged in successfully");
             window.setTimeout(()=>{
                 location.assign("/");
             }, 1500);
         }
     } catch (err) {
-        alert(err.response.data.message);
+        (0, _alertJs.showAlert)("error", err.response.data.message);
     }
 };
-document.querySelector(".form").addEventListener("submit", async (e)=>{
-    e.preventDefault();
-    const email = document.getElementById("email").value;
-    const password = document.getElementById("password").value;
-    await login(email, password);
-});
+const logout = async ()=>{
+    try {
+        const res = await axios.get("/api/v1/users/logout", {
+            withCredentials: true
+        });
+        if (res.data.status === "Success") location.reload(true);
+    } catch (err) {
+        (0, _alertJs.showAlert)("error", "Error logging out! Try again.");
+    }
+}; //     .updat
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"gkKU3":[function(require,module,exports,__globalThis) {
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","./alert.js":"kxdiQ"}],"gkKU3":[function(require,module,exports,__globalThis) {
 exports.interopDefault = function(a) {
     return a && a.__esModule ? a : {
         default: a
@@ -660,57 +706,89 @@ exports.export = function(dest, destName, get) {
 };
 
 },{}],"kxdiQ":[function(require,module,exports,__globalThis) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "showAlert", ()=>showAlert);
+parcelHelpers.export(exports, "hideAlert", ()=>hideAlert);
+const showAlert = (type, msg)=>{
+    hideAlert();
+    const markup = `<div class="alert alert--${type}">${msg}</div>`;
+    document.querySelector("body").insertAdjacentHTML("afterbegin", markup);
+    window.setTimeout(hideAlert, 5000);
+};
+const hideAlert = ()=>{
+    const el = document.querySelector(".alert");
+    if (el) el.parentElement.removeChild(el);
+};
 
-},{}],"3zDlz":[function(require,module,exports,__globalThis) {
-const locations = JSON.parse(document.getElementById("map").dataset.locations);
-console.log("mapbox.js loaded", locations);
-var map = L.map("map", {
-    zoomControl: false,
-    scrollWheelZoom: false
-}).setView([
-    locations[0].coordinates[1],
-    locations[0].coordinates[0]
-], 10);
-L.tileLayer("http://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}", {
-    subdomains: [
-        "mt0",
-        "mt1",
-        "mt2",
-        "mt3"
-    ],
-    maxZoom: 20
-}).addTo(map);
-const bounds = L.latLngBounds();
-// ✅ Add Markers from `locations`
-if (locations) {
-    const customIcon = L.divIcon({
-        className: "marker",
-        html: '<div class="marker"></div>',
-        iconSize: [
-            30,
-            42
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"3zDlz":[function(require,module,exports,__globalThis) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "displayMap", ()=>displayMap);
+const displayMap = (locations)=>{
+    var map = L.map("map", {
+        zoomControl: false,
+        scrollWheelZoom: false
+    }).setView([
+        locations[0].coordinates[1],
+        locations[0].coordinates[0]
+    ], 10);
+    L.tileLayer("http://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}", {
+        subdomains: [
+            "mt0",
+            "mt1",
+            "mt2",
+            "mt3"
         ],
-        iconAnchor: [
-            15,
-            42
-        ]
-    });
-    // ✅ Add Markers with Custom Class
-    locations.forEach((loc)=>{
-        L.marker([
-            loc.coordinates[1],
-            loc.coordinates[0]
-        ], {
-            icon: customIcon
-        }).addTo(map).bindPopup(`<p class="mapboxgl-popup-content">Day ${loc.day}: ${loc.description}`);
-        bounds.extend([
-            loc.coordinates[1],
-            loc.coordinates[0]
-        ]);
-    });
-    map.fitBounds(bounds);
-}
+        maxZoom: 20
+    }).addTo(map);
+    const bounds = L.latLngBounds();
+    // ✅ Add Markers from `locations`
+    if (locations) {
+        const customIcon = L.divIcon({
+            className: "marker",
+            html: '<div class="marker"></div>',
+            iconSize: [
+                30,
+                42
+            ],
+            iconAnchor: [
+                15,
+                42
+            ]
+        });
+        // ✅ Add Markers with Custom Class
+        locations.forEach((loc)=>{
+            L.marker([
+                loc.coordinates[1],
+                loc.coordinates[0]
+            ], {
+                icon: customIcon
+            }).addTo(map).bindPopup(`<p class="mapboxgl-popup-content">Day ${loc.day}: ${loc.description}`);
+            bounds.extend([
+                loc.coordinates[1],
+                loc.coordinates[0]
+            ]);
+        });
+        map.fitBounds(bounds);
+    }
+};
 
-},{}]},["2AetQ","f2QDv"], "f2QDv", "parcelRequire94c2")
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"l3cGY":[function(require,module,exports,__globalThis) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "updateMe", ()=>updateMe);
+var _alertJs = require("./alert.js");
+const updateMe = async (data, type)=>{
+    try {
+        const url = type === "Password" ? "/api/v1/users/updatePassword" : "/api/v1/users/updateMe";
+        const res = await axios.patch(url, data);
+        if (res.data.status === "Success") (0, _alertJs.showAlert)("success", `${type} updated successfully`);
+    } catch (err) {
+        (0, _alertJs.showAlert)("error", err.response.data.message);
+    }
+};
+
+},{"./alert.js":"kxdiQ","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}]},["2AetQ","f2QDv"], "f2QDv", "parcelRequire94c2")
 
 //# sourceMappingURL=index.js.map
