@@ -1,28 +1,28 @@
 const nodemailer = require("nodemailer");
+const axios = require("axios");
 const pug = require("pug");
 const { htmlToText } = require("html-to-text");
+const { MailtrapTransport } = require("mailtrap");
 require("dotenv").config();
-const SibApiV3Sdk = require("sib-api-v3-sdk");
 
 module.exports = class Email {
   constructor(user, url) {
     this.to = user.email;
     this.firstName = user.name.split(" ")[0];
     this.url = url;
-    this.from = { name: "Sani Abdulrahman", email: process.env.EMAIL_FROM };
+    this.from = {
+      name: "Sani Abdulrahman",
+      email: process.env.EMAIL_FROM,
+    };
   }
 
-  async newTransport() {
+  newTransport() {
     if (process.env.NODE_ENV === "production") {
-      const defaultClient = SibApiV3Sdk.ApiClient.instance;
-      const apiKey = defaultClient.authentications["api-key"];
-      apiKey.apiKey = process.env.BREVO_API_KEY;
-
-      return new SibApiV3Sdk.TransactionalEmailsApi();
+      // ✅ Use Brevo API in production (Axios)
+      return null; // No need for nodemailer transport in this case
     }
 
-    // Development: Use Mailtrap (or other service)
-
+    // ✅ Use Mailtrap SMTP in development
     return nodemailer.createTransport(
       MailtrapTransport({
         token: process.env.MAILTRAP_TOKEN,
@@ -32,45 +32,59 @@ module.exports = class Email {
   }
 
   async send(template, subject) {
-    // 1️⃣ Render HTML using Pug template
+    // 1) Render HTML from a Pug template
     const html = pug.renderFile(`${__dirname}/../views/email/${template}.pug`, {
       firstName: this.firstName,
       url: this.url,
       subject,
     });
 
-    // 2️⃣ Convert HTML to plain text
-    const text = htmlToText(html);
-
-    const transport = await this.newTransport();
-
     if (process.env.NODE_ENV === "production") {
-      // Send via Brevo API
-      const sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail({
+      // ✅ Send via Brevo API
+      const emailData = {
         sender: this.from,
         to: [{ email: this.to }],
-        subject,
+        subject: subject,
         htmlContent: html,
-        textContent: text,
-      });
+      };
 
       try {
-        const response = await transport.sendTransacEmail(sendSmtpEmail);
-        console.log("Email sent successfully:", response);
+        const response = await axios.post(
+          "https://api.brevo.com/v3/smtp/email",
+          emailData,
+          {
+            headers: {
+              "Content-Type": "application/json",
+              "api-key": process.env.BREVO_API_KEY,
+            },
+          }
+        );
+        console.log("✅ Email sent successfully via Brevo!", response.data);
       } catch (error) {
-        console.error("Error sending email:", error);
+        console.error(
+          "❌ Error sending email via Brevo:",
+          error.response?.data || error
+        );
       }
     } else {
-      // Send via Nodemailer (Mailtrap in development)
-      await transport.sendMail({
-        from: this.from,
+      // ✅ Send via Mailtrap SMTP
+      const mailOptions = {
+        from: `Sani Abdulrahman <${process.env.EMAIL_FROM}>`,
         to: this.to,
         subject,
         html,
-        text,
+        text: htmlToText(html),
         category: "Integration Test",
         sandbox: true,
-      });
+      };
+
+      try {
+        // const transporter = this.newTransport();
+        await this.newTransport.sendMail(mailOptions);
+        console.log("✅ Email sent successfully via Mailtrap!");
+      } catch (error) {
+        console.error("❌ Error sending email via Mailtrap:", error);
+      }
     }
   }
 

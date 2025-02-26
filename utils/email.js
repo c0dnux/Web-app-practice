@@ -5,6 +5,7 @@ const { MailtrapTransport } = require("mailtrap");
 const { htmlToText } = require("html-to-text");
 require("dotenv").config();
 const mg = require("nodemailer-mailgun-transport");
+const brevoTransport = require("nodemailer-brevo-transport");
 
 // new Email(User, url).sendWelcome();
 module.exports = class Email {
@@ -18,14 +19,19 @@ module.exports = class Email {
   }
   newTransport() {
     if (process.env.NODE_ENV === "production") {
-      var auth = {
-        auth: {
-          api_key: process.env.MAILGUN_API_KEY,
-          domain: "sandbox9a017363ff0d412ca726d7cd0863827b.mailgun.org",
-        },
-      };
+      return nodemailer.createTransport(
+        brevoTransport({
+          apiKey: process.env.BREVO_API_KEY,
+        })
+      );
+      // const auth = {
+      //   auth: {
+      //     api_key: process.env.MAILGUN_API_KEY,
+      //     domain: "sandbox9a017363ff0d412ca726d7cd0863827b.mailgun.org",
+      //   },
+      // };
 
-      return nodemailer.createTransport(mg(auth));
+      // return nodemailer.createTransport(mg(auth));
       // return 1;
     }
     console.log(process.env.MAILTRAP_TOKEN, process.env.EMAIL_FROM);

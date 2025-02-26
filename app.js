@@ -6,6 +6,7 @@ const tourRouter = require("./routes/tourRoutes");
 const userRouter = require("./routes/userRoutes");
 const reviewRoutes = require("./routes/reviewRoutes");
 const viewRouter = require("./routes/viewRoutes");
+const bookingsRouter = require("./routes/bookingsRoute");
 const cookieParser = require("cookie-parser");
 const AppError = require("./utils/appError");
 const globalErrHandler = require("./controllers/errorController");
@@ -120,6 +121,7 @@ app.use("/", viewRouter);
 app.use("/api/v1/tours", tourRouter);
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/reviews", reviewRoutes);
+app.use("/api/v1/booking", bookingsRouter);
 
 //Catch undefinded path
 app.all("*", (req, res, next) => {
