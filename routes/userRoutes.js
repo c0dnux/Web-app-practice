@@ -1,8 +1,9 @@
 const express = require("express");
 const userController = require("./../controllers/userController");
 const authController = require("./../controllers/authcontroller");
-
+const multer = require("multer");
 const router = express.Router();
+
 router.post("/signup", authController.signup);
 router.post("/login", authController.signin);
 router.get("/logout", authController.logout);
@@ -11,7 +12,12 @@ router.post("/forgotPassword", authController.forgetPassword);
 
 router.use(authController.protect);
 router.patch("/updatePassword", authController.updatePassword);
-router.patch("/updateMe", userController.updateMe);
+router.patch(
+  "/updateMe",
+  userController.uploadUserPhoto,
+  userController.resizeUserPhoto,
+  userController.updateMe
+);
 router.patch("/deleteMe", userController.deleteMe);
 router.get("/me", userController.getMe, userController.getUser);
 

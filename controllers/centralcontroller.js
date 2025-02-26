@@ -28,6 +28,8 @@ exports.getAll = (Model) =>
     // let filter = {};
     // // const tourRef = req.params.tourId;
     // if (req.params.tourId) filter = { tourRef: req.params.tourId };
+    console.log(req.file)
+    
     const reviews = await Model.find({ tourRef: req.params.tourId });
 
     res

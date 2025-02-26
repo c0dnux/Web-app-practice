@@ -11,6 +11,9 @@ export const updateMe = async (data, type) => {
     const res = await axios.patch(url, data);
     if (res.data.status === "Success") {
       showAlert("success", `${type} updated successfully`);
+      setTimeout(() => {
+        location.reload(); // Refresh the page after 1.5 seconds
+      }, 1500);
     }
   } catch (err) {
     showAlert("error", err.response.data.message);

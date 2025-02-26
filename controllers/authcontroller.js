@@ -4,7 +4,7 @@ const jwt = require("jsonwebtoken");
 const { promisify } = require("util");
 const crypto = require("crypto");
 const { signTokenHandler } = require("./../utils/customfuncs");
-const sendEmail = require("./../utils/email");
+const Email = require("./../utils/emailBrevo");
 const AppError = require("./../utils/appError");
 
 exports.signup = catchAsync(async (req, res, next) => {
@@ -14,7 +14,9 @@ exports.signup = catchAsync(async (req, res, next) => {
     if (req.body[elem]) gotten[elem] = req.body[elem];
   });
   const newUser = await User.create(gotten);
+  const url = `${req.protocol}://${req.get("host")}/me`;
 
+  await new Email(newUser, url).sendWelcome();
   // const token = signToken(newUser._id);
   // res
   //   .status(201)
@@ -140,6 +142,7 @@ exports.restrictTo = (...roles) => {
 
 exports.forgetPassword = catchAsync(async (req, res, next) => {
   const user = await User.findOne({ email: req.body.email });
+
   if (!user) {
     return next(new AppError("No user with the given email", 404));
   }
@@ -149,18 +152,14 @@ exports.forgetPassword = catchAsync(async (req, res, next) => {
   const resetURL = `${req.protocol}://${req.get(
     "host"
   )}/api/v1/users/resetPassword/${resetToken}`;
-  const message = `Forgot password ? Click link to reset ${resetURL}`;
   try {
-    await sendEmail({
-      email: user.email,
-      subject: "Your password reset token valid for 5min",
-      message,
-    });
+    await new Email(user, resetURL).sendPasswordReset();
     res.status(200).json({ status: "Success", message: "Token sent to email" });
   } catch (error) {
     user.passwordResetToken = undefined;
     user.passwordResetExpires = undefined;
     await user.save({ validateBeforeSave: false });
+    console.log(error);
 
     return next(new AppError("There was an error resetting password", 500));
   }

@@ -23,8 +23,14 @@ app.use(
   helmet.contentSecurityPolicy({
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'"],
-      styleSrc: ["'self'", "https: 'unsafe-inline'"],
+      scriptSrc: [
+        "'self'",
+        "'unsafe-inline'",
+        "https://cdnjs.cloudflare.com",
+        "https://cdn.jsdelivr.net",
+        "https://unpkg.com",
+      ],
+      styleSrc: ["'self'", "'unsafe-inline'", "https:"],
       imgSrc: ["'self'", "data:", "https:"],
       connectSrc: ["'self'"],
     },
@@ -57,7 +63,7 @@ app.use(express.static(path.join(__dirname, "public")));
 app.use(limiter);
 //Body Parser (req.body)
 app.use(express.json());
-// app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 //data sanitization against NoSQL query injection
@@ -98,16 +104,17 @@ app.use((req, res, next) => {
 //   );
 //   next();
 // });
-app.use((req, res, next) => {
-  res.setHeader(
-    "Content-Security-Policy",
-    "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com;"
-  );
-  next();
-});
+// app.use((req, res, next) => {
+//   res.setHeader(
+//     "Content-Security-Policy",
+//     "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com;"
+//   );
+//   next();
+// });
 
 app.set("view engine", "pug");
 app.set("views", path.join(__dirname, "views"));
+
 ///Route handlers
 app.use("/", viewRouter);
 app.use("/api/v1/tours", tourRouter);

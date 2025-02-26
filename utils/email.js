@@ -1,58 +1,69 @@
-// const nodemailer = require("nodemailer");
-// const { MailtrapTransport } = require("mailtrap");
-
-// const sendEmail = async (options) => {
-//   const TOKEN = "********b7ec";
-
-//   const transporter = nodemailer.createTransport(
-//     MailtrapTransport({
-//       token: TOKEN,
-//       testInboxId: 3366356,
-//     })
-//   );
-//   const sender = {
-//     address: "hello@example.com",
-//     name: "Mailtrap Test",
-//   };
-//   const recipients = ["saniabdulrahman851@gmail.com"];
-//   const mailOptions = {
-//     from: sender,
-//     to: options.email,
-//     subject: options.subject,
-//     text: options.message,
-//     category: "Integration Test",
-//     sandbox: true,
-//     // html:op
-//   };
-//   await transporter.sendMail(mailOptions);
-// };
 // Looking to send emails in production? Check out our Email API/SMTP product!
 const nodemailer = require("nodemailer");
+const pug = require("pug");
 const { MailtrapTransport } = require("mailtrap");
-const { options } = require("../app");
-const sendEmail = async (options) => {
-  const TOKEN = "a8fcb9359b4933e75ec270de77b1b7ec";
+const { htmlToText } = require("html-to-text");
+require("dotenv").config();
+const mg = require("nodemailer-mailgun-transport");
 
-  const transporter = nodemailer.createTransport(
-    MailtrapTransport({
-      token: TOKEN,
-      testInboxId: 3366356,
-    })
-  );
+// new Email(User, url).sendWelcome();
+module.exports = class Email {
+  constructor(user, url) {
+    this.to = user.email;
+    this.firstName = user.name.split(" ")[0];
+    this.url = url;
+    // this.from = `Sani Abdulrahman <saniabdulrahman851@gmail.com>`;
 
-  const sender = {
-    address: "hello@example.com",
-    name: "Mailtrap Test",
-  };
-  const recipients = [options.email];
-  const mailOptions = {
-    from: sender,
-    to: recipients,
-    subject: options.subject,
-    text: options.message,
-    category: "Integration Test",
-    sandbox: true,
-  };
-  await transporter.sendMail(mailOptions);
+    this.from = `Sani Abdulrahman <${process.env.EMAIL_FROM}>`;
+  }
+  newTransport() {
+    if (process.env.NODE_ENV === "production") {
+      var auth = {
+        auth: {
+          api_key: process.env.MAILGUN_API_KEY,
+          domain: "sandbox9a017363ff0d412ca726d7cd0863827b.mailgun.org",
+        },
+      };
+
+      return nodemailer.createTransport(mg(auth));
+      // return 1;
+    }
+    console.log(process.env.MAILTRAP_TOKEN, process.env.EMAIL_FROM);
+
+    return nodemailer.createTransport(
+      MailtrapTransport({
+        token: process.env.MAILTRAP_TOKEN,
+        testInboxId: 3366356,
+      })
+    );
+  }
+  async send(template, subject) {
+    //1) Render HTML based on a pug template
+    const html = pug.renderFile(`${__dirname}/../views/email/${template}.pug`, {
+      firstName: this.firstName,
+      url: this.url,
+      subject,
+    });
+    //2) Define email options
+    const mailOptions = {
+      from: this.from,
+      to: this.to,
+      subject,
+      html,
+      text: htmlToText(html),
+      category: "Integration Test",
+      sandbox: true,
+    };
+    //3) Create a transport and send email
+    await this.newTransport().sendMail(mailOptions);
+  }
+  async sendWelcome() {
+    await this.send("welcome", "Welcome to the Natours Family!");
+  }
+  async sendPasswordReset() {
+    await this.send(
+      "passwordReset",
+      "Your password reset token (valid for only 10 minutes)"
+    );
+  }
 };
-module.exports = sendEmail;
