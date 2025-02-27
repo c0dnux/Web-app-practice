@@ -1,6 +1,7 @@
 import { login, logout } from "./login.js";
 import { displayMap } from "./mapbox.js";
 import { updateMe } from "./updateSettings.js";
+import { bookTour } from "./paystack.js";
 //DOM ELEMENTS
 const map = document.getElementById("map");
 const input2 = document.getElementById("password-confirm");
@@ -8,6 +9,7 @@ const loginForm = document.querySelector(".form--login");
 const logoutBtn = document.querySelector(".nav__el--logout");
 const userDataForm = document.querySelector(".form-user-data");
 const userPassword = document.querySelector(".form-user-settings");
+const checkout= document.querySelector("#book-tour");
 // if (input2) {
 //   input2.addEventListener("input", function () {
 //     // Get the values of both input fields
@@ -72,5 +74,12 @@ if (userPassword) {
 
     document.getElementById("password-current").value = "";
     document.getElementById("password").value = "";
+  });
+}
+if(checkout){
+  checkout.addEventListener("click", async (e) => {
+    e.target.textContent = "Processing...";
+    const { tourId } = e.target.dataset;
+    await bookTour(tourId);
   });
 }

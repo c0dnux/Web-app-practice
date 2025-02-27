@@ -9,5 +9,6 @@ router.use(authController.isLoggedIn);
 router.get("/login", viewController.login);
 router.get("/", viewController.tourOverview);
 router.get("/tour/:slug", viewController.getTour);
+router.get("/payment-success", viewController.paymentStatus);
 
 module.exports = router;

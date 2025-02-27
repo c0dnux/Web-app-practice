@@ -30,6 +30,8 @@ app.use(
         "https://cdnjs.cloudflare.com",
         "https://cdn.jsdelivr.net",
         "https://unpkg.com",
+        "https://js.paystack.co", // ✅ Allow Paystack
+        "https://cdn.tailwindcss.com",
       ],
       styleSrc: ["'self'", "'unsafe-inline'", "https:"],
       imgSrc: ["'self'", "data:", "https:"],
@@ -100,11 +102,11 @@ app.use((req, res, next) => {
 // app.use((req, res, next) => {
 //   res.setHeader(
 //     "Content-Security-Policy",
-
-//     "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com"
+//     "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com https://js.paystack.co"
 //   );
 //   next();
 // });
+
 // app.use((req, res, next) => {
 //   res.setHeader(
 //     "Content-Security-Policy",

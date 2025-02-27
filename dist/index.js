@@ -599,12 +599,32 @@ function hmrAccept(bundle /*: ParcelRequire */ , id /*: string */ ) {
 var _loginJs = require("./login.js");
 var _mapboxJs = require("./mapbox.js");
 var _updateSettingsJs = require("./updateSettings.js");
+var _paystackJs = require("./paystack.js");
 //DOM ELEMENTS
 const map = document.getElementById("map");
+const input2 = document.getElementById("password-confirm");
 const loginForm = document.querySelector(".form--login");
 const logoutBtn = document.querySelector(".nav__el--logout");
 const userDataForm = document.querySelector(".form-user-data");
 const userPassword = document.querySelector(".form-user-settings");
+const checkout = document.querySelector("#book-tour");
+// if (input2) {
+//   input2.addEventListener("input", function () {
+//     // Get the values of both input fields
+//     const input2 = document.getElementById("password").value;
+//     const input1 = document.getElementById("password-confirm").value;
+//     // Get the message display element
+//     var messageElement = document.getElementById("message");
+//     // Check if the values match
+//     if (input2 !== input1) {
+//       messageElement.style.display = "block";
+//       messageElement.classList.add("alert", "alert-danger");
+//       messageElement.textContent = "Values do not match.";
+//     } else {
+//       messageElement.style.display = "none"; // Hides the element
+//     }
+//   });
+// }
 //VALUES
 //DELEGATION
 if (map) {
@@ -623,24 +643,33 @@ if (logoutBtn) logoutBtn.addEventListener("click", async (e)=>{
 });
 if (userDataForm) userDataForm.addEventListener("submit", async (e)=>{
     e.preventDefault();
-    const name = document.getElementById("name").value;
-    const email = document.getElementById("email").value;
-    await (0, _updateSettingsJs.updateMe)({
-        name,
-        email
-    }, "Data");
+    const form = new FormData();
+    form.append("name", document.getElementById("name").value);
+    form.append("email", document.getElementById("email").value);
+    form.append("photo", document.getElementById("photo").files[0]);
+    console.log(form);
+    await (0, _updateSettingsJs.updateMe)(form, "Data");
 });
 if (userPassword) userPassword.addEventListener("submit", async (e)=>{
     e.preventDefault();
+    document.querySelector(".btn--save--password").textContent = "Updating...";
     const currentPassword = document.getElementById("password-current").value;
     const newPassword = document.getElementById("password").value;
     await (0, _updateSettingsJs.updateMe)({
         currentPassword,
         newPassword
     }, "Password");
+    document.querySelector(".btn--save--password").textContent = "Save password";
+    document.getElementById("password-current").value = "";
+    document.getElementById("password").value = "";
+});
+if (checkout) checkout.addEventListener("click", async (e)=>{
+    e.target.textContent = "Processing...";
+    const { tourId } = e.target.dataset;
+    await (0, _paystackJs.bookTour)(tourId);
 });
 
-},{"./login.js":"7yHem","./mapbox.js":"3zDlz","./updateSettings.js":"l3cGY"}],"7yHem":[function(require,module,exports,__globalThis) {
+},{"./login.js":"7yHem","./mapbox.js":"3zDlz","./updateSettings.js":"l3cGY","./paystack.js":"f0HGt"}],"7yHem":[function(require,module,exports,__globalThis) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "login", ()=>login);
@@ -783,9 +812,33 @@ const updateMe = async (data, type)=>{
     try {
         const url = type === "Password" ? "/api/v1/users/updatePassword" : "/api/v1/users/updateMe";
         const res = await axios.patch(url, data);
-        if (res.data.status === "Success") (0, _alertJs.showAlert)("success", `${type} updated successfully`);
+        if (res.data.status === "Success") {
+            (0, _alertJs.showAlert)("success", `${type} updated successfully`);
+            setTimeout(()=>{
+                location.reload(); // Refresh the page after 1.5 seconds
+            }, 1500);
+        }
     } catch (err) {
         (0, _alertJs.showAlert)("error", err.response.data.message);
+    }
+};
+
+},{"./alert.js":"kxdiQ","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"f0HGt":[function(require,module,exports,__globalThis) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "bookTour", ()=>bookTour);
+var _alertJs = require("./alert.js");
+const bookTour = async (tourId)=>{
+    try {
+        const res = await axios.get(`/api/v1/booking/checkout-session/${tourId}`);
+        // ✅ Extract the checkout URL from the response
+        const checkoutUrl = res.data.checkoutUrl;
+        if (checkoutUrl) // ✅ Redirect the user to Paystack Checkout
+        window.location.href = checkoutUrl;
+        else (0, _alertJs.showAlert)("error", "Payment initiation failed. No checkout URL received.");
+    } catch (err) {
+        console.log(err);
+        (0, _alertJs.showAlert)("error", err.message);
     }
 };
 

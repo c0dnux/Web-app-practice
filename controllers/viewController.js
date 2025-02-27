@@ -41,3 +41,8 @@ exports.getAccount = catchAsync(async (req, res, next) => {
     title: "Your Account",
   });
 });
+exports.paymentStatus = catchAsync(async (req, res, next) => {
+  res.status(200).render("payment-status", {
+    title: "Payment Status",
+  });
+});
